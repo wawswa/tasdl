@@ -19,7 +19,7 @@ module top_module(
     // --- Output RGB LED (Pompa Air = Biru) ---
     output wire pompa_air_r,     // LED16_R: Selalu OFF
     output wire pompa_air_g,     // LED16_G: Selalu OFF
-    output wire pompa_air_b      // LED16_B: Biru saat pompa ON
+    output wire pompa_air_b,     // LED16_B: Biru saat pompa ON
 
     // --- Output 7-Segment ---
     output wire [6:0] seg,        // Segmen {g,f,e,d,c,b,a}, aktif rendah
