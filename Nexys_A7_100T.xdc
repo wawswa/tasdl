@@ -13,8 +13,10 @@ set_property -dict { PACKAGE_PIN L16   IOSTANDARD LVCMOS33 } [get_ports enable];
 set_property -dict { PACKAGE_PIN M13   IOSTANDARD LVCMOS33 } [get_ports sensor_kering];   # SW2: Sensor Kelembapan
 set_property -dict { PACKAGE_PIN R15   IOSTANDARD LVCMOS33 } [get_ports sensor_hujan];    # SW3: Sensor Hujan
 
-## --- LED (Output) ---
-set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 } [get_ports pompa_air];  # LED0: Pompa Air
+## --- RGB LED (Output) - Pompa Air Biru ---
+set_property -dict { PACKAGE_PIN N15   IOSTANDARD LVCMOS33 } [get_ports pompa_air_r];  # LED16_R (OFF)
+set_property -dict { PACKAGE_PIN M16   IOSTANDARD LVCMOS33 } [get_ports pompa_air_g];  # LED16_G (OFF)
+set_property -dict { PACKAGE_PIN R12   IOSTANDARD LVCMOS33 } [get_ports pompa_air_b];  # LED16_B (Biru saat ON)
 
 ## --- 7-Segment Display Cathodes (seg) ---
 ## seg[0]=a, seg[1]=b, seg[2]=c, seg[3]=d, seg[4]=e, seg[5]=f, seg[6]=g
@@ -41,5 +43,5 @@ set_property -dict { PACKAGE_PIN U13   IOSTANDARD LVCMOS33 } [get_ports {an[7]}]
 
 ## --- Konfigurasi Bitstream ---
 set_property CONFIG_VOLTAGE 3.3 [current_design]
-set_property CFGBVS VCCIO [current_design]
+set_property CFGBVS VCCO [current_design]
 set_property BITSTREAM.CONFIG.UNUSEDPIN PULLDOWN [current_design]

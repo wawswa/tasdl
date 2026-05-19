@@ -16,8 +16,10 @@ module top_module(
     input  wire sensor_kering,    // SW2: Sensor kelembapan (1=kering, 0=basah)
     input  wire sensor_hujan,     // SW3: Sensor hujan (1=hujan, 0=tidak)
 
-    // --- Output LED ---
-    output wire pompa_air,        // LED0: Indikator pompa air (1=menyala)
+    // --- Output RGB LED (Pompa Air = Biru) ---
+    output wire pompa_air_r,     // LED16_R: Selalu OFF
+    output wire pompa_air_g,     // LED16_G: Selalu OFF
+    output wire pompa_air_b      // LED16_B: Biru saat pompa ON
 
     // --- Output 7-Segment ---
     output wire [6:0] seg,        // Segmen {g,f,e,d,c,b,a}, aktif rendah
@@ -30,6 +32,7 @@ module top_module(
     // ========================================================
     wire slow_clk;                // Clock 1 Hz dari clock_divider
     wire [1:0] state_bus;         // Bus state dari FSM ke 7-seg decoder
+    wire pompa_air_wire;          // Sinyal pompa_air dari FSM
 
     // ========================================================
     // Modul 3: Instansiasi Clock Divider
@@ -51,7 +54,7 @@ module top_module(
         .enable          (enable),
         .sensor_kering  (sensor_kering),
         .sensor_hujan   (sensor_hujan),
-        .pompa_air      (pompa_air),
+        .pompa_air      (pompa_air_wire),
         .state_out      (state_bus)
     );
 
@@ -69,5 +72,14 @@ module top_module(
     // Data Flow: Decimal point selalu OFF (aktif rendah = 1)
     // ========================================================
     assign dp = 1'b1;
+
+    // ========================================================
+    // Data Flow: RGB LED untuk indikator Pompa Air (Biru)
+    // Saat pompa_air=1 → LED16_B ON (biru), R & G OFF
+    // Saat pompa_air=0 → Semua OFF
+    // ========================================================
+    assign pompa_air_r = 1'b0;
+    assign pompa_air_g = 1'b0;
+    assign pompa_air_b = pompa_air_wire;
 
 endmodule
