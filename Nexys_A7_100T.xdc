@@ -14,7 +14,7 @@ set_property -dict { PACKAGE_PIN M13   IOSTANDARD LVCMOS33 } [get_ports sensor_k
 set_property -dict { PACKAGE_PIN R15   IOSTANDARD LVCMOS33 } [get_ports sensor_hujan];    # SW3: Sensor Hujan
 
 ## --- RGB LED (Output) - Pompa Air Biru ---
-set_property -dict { PACKAGE_PIN N15   IOSTANDARD LVCMOS33 } [get_ports pompa_air_r];  # LED16_R (OFF)
+set_property -dict { PACKAGE_PIN N16   IOSTANDARD LVCMOS33 } [get_ports pompa_air_r];  # LED16_R (OFF)
 set_property -dict { PACKAGE_PIN M16   IOSTANDARD LVCMOS33 } [get_ports pompa_air_g];  # LED16_G (OFF)
 set_property -dict { PACKAGE_PIN R12   IOSTANDARD LVCMOS33 } [get_ports pompa_air_b];  # LED16_B (Biru saat ON)
 
