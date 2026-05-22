@@ -10,7 +10,7 @@
 //   S_IDLE  = 2'b00  → Pompa OFF, 7seg = 'I'
 //   S_CHECK = 2'b01  → Pompa OFF, 7seg = 'C'
 //   S_WATER = 2'b10  → Pompa ON,  7seg = 'A'
-//   S_DONE  = 2'b11  → Pompa OFF, 7seg = 'd'
+//   S_RAIN  = 2'b11  → Pompa OFF, 7seg = 'R' (sedang hujan)
 // ============================================================
 
 module fsm_controller(
@@ -19,7 +19,7 @@ module fsm_controller(
     input  wire enable,         // Switch Enable: 1 = sistem aktif
     input  wire sensor_kering,  // 1 = tanah kering, 0 = tanah basah
     input  wire sensor_hujan,   // 1 = hujan, 0 = tidak hujan
-    output wire pompa_air,      // 1 = pompa menyala (LED)
+    output wire pompa_air,      // 1 = pompa menyala (LED biru)
     output wire [1:0] state_out // State saat ini untuk 7-seg decoder
 );
 
@@ -27,7 +27,7 @@ module fsm_controller(
     localparam S_IDLE  = 2'b00;
     localparam S_CHECK = 2'b01;
     localparam S_WATER = 2'b10;
-    localparam S_DONE  = 2'b11;
+    localparam S_RAIN  = 2'b11;
 
     reg [1:0] current_state;
     reg [1:0] next_state;
@@ -61,7 +61,9 @@ module fsm_controller(
             S_CHECK: begin
                 if (!enable)
                     next_state = S_IDLE;
-                else if (sensor_kering && !sensor_hujan)
+                else if (sensor_hujan)
+                    next_state = S_RAIN;
+                else if (sensor_kering)
                     next_state = S_WATER;
                 else
                     next_state = S_CHECK;
@@ -71,14 +73,14 @@ module fsm_controller(
                 if (!enable)
                     next_state = S_IDLE;
                 else if (sensor_hujan)
-                    next_state = S_DONE;
+                    next_state = S_RAIN;
                 else if (!sensor_kering)
-                    next_state = S_DONE;
+                    next_state = S_RAIN;
                 else
                     next_state = S_WATER;
             end
 
-            S_DONE: begin
+            S_RAIN: begin
                 if (!enable)
                     next_state = S_IDLE;
                 else

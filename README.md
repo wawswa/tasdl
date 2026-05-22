@@ -29,14 +29,16 @@
 
 1. Sistem di `S_IDLE` → Jika Enable ON, berpindah ke `S_CHECK`.
 2. Di `S_CHECK` → Membaca sensor secara terus-menerus (stay/loop):
-   - Jika **kering & tidak hujan** → `S_WATER` (pompa menyala, **LED16 biru ON**, 7-seg tampil "A").
-   - Jika **basah atau hujan** → **tetap di `S_CHECK`** (terus monitoring, tidak langsung ke DONE).
+   - Jika **kering & tidak hujan (SK=1, SH=0)** → `S_WATER` (pompa menyala, **LED16 biru ON**, 7-seg tampil "A").
+   - Jika **hujan (SH=1)** → `S_RAIN` (sedang hujan, 7-seg tampil "**R**").
+   - Jika **basah & tidak hujan (SK=0, SH=0)** → **tetap di `S_CHECK`** (terus monitoring).
    - Jika **Enable OFF** → kembali ke `S_IDLE`.
 3. Di `S_WATER` (pompa aktif):
    - Tetap menyiram selama tanah kering & tidak hujan (self-loop).
-   - Jika **hujan** atau **tanah sudah basah** → `S_DONE`.
+   - Jika **hujan (SH=1)** → `S_RAIN` (berhenti menyiram karena hujan).
+   - Jika **tanah sudah basah (SK=0)** → `S_RAIN` (selesai menyiram).
    - Jika **Enable OFF** → `S_IDLE`.
-4. Di `S_DONE` → Jika Enable ON, kembali ke `S_CHECK` untuk evaluasi ulang, membentuk siklus monitoring.
+4. Di `S_RAIN` → Jika Enable ON, kembali ke `S_CHECK` untuk evaluasi ulang, membentuk siklus monitoring.
 
 Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 MHz), sehingga perubahan status terlihat jelas oleh mata.
 
@@ -51,7 +53,7 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 | S_IDLE | 2'b00 | OFF | OFF | I |
 | S_CHECK | 2'b01 | OFF | OFF | C |
 | S_WATER | 2'b10 | ON | **Biru** | A |
-| S_DONE | 2'b11 | OFF | OFF | d |
+| S_RAIN | 2'b11 | OFF | OFF | **R** |
 
 ### Diagram Transisi State (ASCII-Art)
 
