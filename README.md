@@ -82,46 +82,44 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
      │    │              ▲                               │           │ │
      │    │              │                        ┌──────┴──────┐    │ │
      │    │              │                        │             │    │ │
-     │    │              │                 E=1,SK=1,SH=0   E=1         │ │
-     │    │              │                 (kering &       SK=0        │ │
-     │    │              │                  tdk hujan)       atau     │ │
-     │    │              │                        │        SH=1       │ │
-     │    │              │                        │        (tetap     │ │
-     │    │              │                        │         cek       │ │
-     │    │              │                        v         sensor)   │ │
-     │    │              │               ┌──────────────┐   │        │ │
-     │    │              │               │              │   │        │ │
-     │    │              │               │  WATERING    │   │        │ │
-     │    │              │               │  S_WATER     │   │        │ │
-     │    │              │               │    10        │   │        │ │
-     │    │              │               │  Pompa = 1   │   │        │ │
-     │    │              │               │  LED = Biru  │   │        │ │
-     │    │              │               │  7seg = A    │   │        │ │
-     │    │              │               │              │   │        │ │
-     │    │              │               └──────┬───────┘   │        │ │
-     │    │              │                      │           │        │ │
-     │    │              │               ┌──────┴──────┐    │        │ │
-     │    │              │               │             │    │        │ │
-     │    │              │        E=1,SK=1,SH=0    E=0 atau     │ │
-     │    │              │        (tetap siram)   E=1,SK=0      │ │
-     │    │              │               │        atau SH=1      │ │
-     │    │              │               │             │        │ │
-     │    │              │               v             v        │ │
-     │    │              │        ┌──────────────┐ ┌──────────────┐│ │
-     │    │              │        │  WATERING    │ │    DONE      ││ │
-     │    │              │        │   (loop)     │ │  S_DONE      ││ │
-     │    │              │        └──────────────┘ │     11       ││ │
-     │    │              │                         │  Pompa = 0   ││ │
-     │    │              │                         │  7seg = d    ││ │
-     │    │              │                         │  LED = OFF   ││ │
-     │    │              │                         └──────┬───────┘│ │
-     │    │              │                                │        │ │
-     │    │              │                          E=1,X,X│  E=0   │ │
-     │    │              │                          (kembali│  atau  │ │
-     │    │              │                           cek)   │  reset │ │
-     │    │              └──────────────────────────────────────┘ │ │
-     │    └───────────────────────────────────────────────────────┘ │
-     │                                                                  │
+     │    │              │                 E=1,SK=1,SH=0   E=1       │ │
+     │    │              │                 (kering &       SK=0      │ │
+     │    │              │                  tdk hujan)    SH=0       │ │
+     │    │              │                        │   (tetap    │     │ │
+     │    │              │                        │    cek)     │     │ │
+     │    │              │                        v   ┌──────┐ │     │ │
+     │    │              │               ┌──────────┐  │      │ │     │ │
+     │    │              │               │          │  │      │ │     │ │
+     │    │              │               │ WATERING │  │      │ │     │ │
+     │    │              │               │ S_WATER  │  │      │ │     │ │
+     │    │              │               │   10     │  │      │ │     │ │
+     │    │              │               │ Pompa=1  │  │      │ │     │ │
+     │    │              │               │ LED=Biru │  │      │ │     │ │
+     │    │              │               │ 7seg = A  │  │      │ │     │ │
+     │    │              │               │          │  │      │ │     │ │
+     │    │              │               └────┬─────┘  │      │ │     │ │
+     │    │              │                    │        │      │ │     │ │
+     │    │              │             ┌──────┴──────┐ │      │ │     │ │
+     │    │              │             │             │ │      │ │     │ │
+     │    │              │        E=1,SK=1,SH=0    │ │      │ │     │ │
+     │    │              │        (tetap siram)     │ │      │ │     │ │
+     │    │              │             │    E=1,SH=1 │ │      │ │     │ │
+     │    │              │             │    atau     │ │      │ │     │ │
+     │    │              │             │    E=1,SK=0  │ │      │ │     │ │
+     │    │              │             v    (hujan/   v v      │ │     │ │
+     │    │              │       ┌──────────┐  ┌──────────┐  │ │     │ │
+     │    │              │       │ WATERING │  │  RAIN    │  │ │     │ │
+     │    │              │       │  (loop)  │  │ S_RAIN   │  │ │     │ │
+     │    │              │       └──────────┘  │   11     │  │ │     │ │
+     │    │              │                     │ Pompa=0  │  │ │     │ │
+     │    │              │                     │ 7seg = R │  │ │     │ │
+     │    │              │                     │ LED=OFF  │──┘ │     │ │
+     │    │              │                     └────┬─────┘  E=1│     │ │
+     │    │              │                          │        (kembali │ │
+     │    │              │                     E=0  │         cek)   │ │
+     │    │              │                     atau  │              │ │
+     │    │              │                     reset │              │ │
+     │    │              └───────────────────────────┘──────────────┘ │
      └──────────────────────────────────────────────────────────────────┘
 
      Ringkasan Transisi:
@@ -130,12 +128,15 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
      IDLE   ──(E=0)──────────► IDLE (self-loop)
      CHECK  ──(E=0)──────────► IDLE
      CHECK  ──(E=1,SK=1,SH=0)► WATERING
-     CHECK  ──(E=1,SK=0 atau SH=1)► CHECK (self-loop, tetap monitoring)
+     CHECK  ──(E=1,SK=0,SH=0)► CHECK (self-loop, tetap monitoring)
+     CHECK  ──(E=1,SH=1)──────► RAIN (sedang hujan)
      WATER  ──(E=0)──────────► IDLE
      WATER  ──(E=1,SK=1,SH=0)► WATERING (self-loop, tetap siram)
-     WATER  ──(E=1,SK=0 atau SH=1)► DONE
-     DONE   ──(E=0)──────────► IDLE
-     DONE   ──(E=1)──────────► CHECK
+     WATER  ──(E=1,SH=1)──────► RAIN (hujan, berhenti siram)
+     WATER  ──(E=1,SK=0)──────► RAIN (tanah basah, selesai siram)
+     RAIN   ──(E=0)──────────► IDLE
+     RAIN   ──(E=1)──────────► CHECK
+```
 ```
 
 ### Tabel Transisi Ringkas
@@ -146,14 +147,15 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 | S_IDLE | 1 | X | X | S_CHECK |
 | S_CHECK | 0 | X | X | S_IDLE |
 | S_CHECK | 1 | 1 | 0 | S_WATER |
-| S_CHECK | 1 | 0 | X | S_CHECK |
-| S_CHECK | 1 | 1 | 1 | S_CHECK |
+| S_CHECK | 1 | 0 | 0 | S_CHECK |
+| S_CHECK | 1 | 1 | 1 | S_RAIN |
+| S_CHECK | 1 | 0 | 1 | S_RAIN |
 | S_WATER | 0 | X | X | S_IDLE |
 | S_WATER | 1 | 1 | 0 | S_WATER |
-| S_WATER | 1 | X | 1 | S_DONE |
-| S_WATER | 1 | 0 | X | S_DONE |
-| S_DONE | 0 | X | X | S_IDLE |
-| S_DONE | 1 | X | X | S_CHECK |
+| S_WATER | 1 | X | 1 | S_RAIN |
+| S_WATER | 1 | 0 | X | S_RAIN |
+| S_RAIN | 0 | X | X | S_IDLE |
+| S_RAIN | 1 | X | X | S_CHECK |
 
 ---
 
@@ -172,7 +174,7 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 | S_IDLE (00) | 0 | OFF | I |
 | S_CHECK (01) | 0 | OFF | C |
 | S_WATER (10) | 1 | **Biru** | A |
-| S_DONE (11) | 0 | OFF | d |
+| S_RAIN (11) | 0 | OFF | **R** |
 
 ### Tabel Transisi State Lengkap
 
@@ -182,18 +184,22 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 | 00 | 1 | X | X | 01 | 0 | OFF | I |
 | 01 | 0 | X | X | 00 | 0 | OFF | C |
 | 01 | 1 | 0 | 0 | 01 | 0 | OFF | C |
-| 01 | 1 | 0 | 1 | 01 | 0 | OFF | C |
 | 01 | 1 | 1 | 0 | 10 | 0 | OFF | C |
-| 01 | 1 | 1 | 1 | 01 | 0 | OFF | C |
+| 01 | 1 | 1 | 1 | 11 | 0 | OFF | C |
+| 01 | 1 | 0 | 1 | 11 | 0 | OFF | C |
 | 10 | 0 | X | X | 00 | 1 | Biru | A |
 | 10 | 1 | 1 | 0 | 10 | 1 | Biru | A |
 | 10 | 1 | 1 | 1 | 11 | 1 | Biru | A |
 | 10 | 1 | 0 | 0 | 11 | 1 | Biru | A |
 | 10 | 1 | 0 | 1 | 11 | 1 | Biru | A |
-| 11 | 0 | X | X | 00 | 0 | OFF | d |
-| 11 | 1 | X | X | 01 | 0 | OFF | d |
+| 11 | 0 | X | X | 00 | 0 | OFF | R |
+| 11 | 1 | X | X | 01 | 0 | OFF | R |
 
-> **Catatan:** Pada state S_CHECK(01), kondisi selain E=1 & SK=1 & SH=0 menghasilkan **S_CHECK (stay)** — sistem tetap monitoring sensor tanpa berpindah ke state lain. Hanya saat SK=1 (kering) dan SH=0 (tidak hujan) FSM berpindah ke S_WATER. Pada state S_WATER(10), kondisi SK=0 atau SH=1 menghasilkan S_DONE (berhenti menyiram karena tanah basah atau sedang hujan).
+> **Catatan:** Pada state S_CHECK(01):
+> - SK=0, SH=0 (basah, tidak hujan) → **stay S_CHECK** (terus monitoring).
+> - SH=1 (hujan, apapun SK) → **S_RAIN** (sedang hujan).
+> - SK=1, SH=0 (kering, tidak hujan) → **S_WATER** (perlu disiram).
+> Pada state S_WATER(10), kondisi SK=0 atau SH=1 → **S_RAIN** (berhenti menyiram karena selesai atau hujan).
 
 ---
 
@@ -319,7 +325,7 @@ tasdl/
 | **Modul 2** | Coding Reuse | `top_module.v` → top module memanggil 3 sub-module |
 | **Modul 3** | Clocking Function | `clock_divider.v` → counter 50M untuk menurunkan 100MHz → 1Hz |
 | **Modul 4** | D-Flip-Flop | `fsm_controller.v` → `always @(posedge slow_clk or posedge reset)` menyimpan state |
-| **Modul 5** | FSM Moore | `fsm_controller.v` → 4 state (S_IDLE, S_CHECK, S_WATER, S_DONE) dengan output = f(state) |
+| **Modul 5** | FSM Moore | `fsm_controller.v` → 4 state (S_IDLE, S_CHECK, S_WATER, S_RAIN) dengan output = f(state) |
 
 ### Pemetaan Pin XDC
 
@@ -406,7 +412,7 @@ endmodule
 //   S_IDLE  = 2'b00  → Pompa OFF, 7seg = 'I'
 //   S_CHECK = 2'b01  → Pompa OFF, 7seg = 'C'
 //   S_WATER = 2'b10  → Pompa ON,  7seg = 'A'
-//   S_DONE  = 2'b11  → Pompa OFF, 7seg = 'd'
+//   S_RAIN  = 2'b11  → Pompa OFF, 7seg = 'R'
 // ============================================================
 
 module fsm_controller(
@@ -415,7 +421,7 @@ module fsm_controller(
     input  wire enable,         // Switch Enable: 1 = sistem aktif
     input  wire sensor_kering,  // 1 = tanah kering, 0 = tanah basah
     input  wire sensor_hujan,   // 1 = hujan, 0 = tidak hujan
-    output wire pompa_air,      // 1 = pompa menyala (LED)
+    output wire pompa_air,      // 1 = pompa menyala (LED biru)
     output wire [1:0] state_out // State saat ini untuk 7-seg decoder
 );
 
@@ -423,7 +429,7 @@ module fsm_controller(
     localparam S_IDLE  = 2'b00;
     localparam S_CHECK = 2'b01;
     localparam S_WATER = 2'b10;
-    localparam S_DONE  = 2'b11;
+    localparam S_RAIN  = 2'b11;
 
     reg [1:0] current_state;
     reg [1:0] next_state;
@@ -457,7 +463,9 @@ module fsm_controller(
             S_CHECK: begin
                 if (!enable)
                     next_state = S_IDLE;
-                else if (sensor_kering && !sensor_hujan)
+                else if (sensor_hujan)
+                    next_state = S_RAIN;
+                else if (sensor_kering)
                     next_state = S_WATER;
                 else
                     next_state = S_CHECK;
@@ -467,14 +475,14 @@ module fsm_controller(
                 if (!enable)
                     next_state = S_IDLE;
                 else if (sensor_hujan)
-                    next_state = S_DONE;
+                    next_state = S_RAIN;
                 else if (!sensor_kering)
-                    next_state = S_DONE;
+                    next_state = S_RAIN;
                 else
                     next_state = S_WATER;
             end
 
-            S_DONE: begin
+            S_RAIN: begin
                 if (!enable)
                     next_state = S_IDLE;
                 else
@@ -508,7 +516,7 @@ endmodule
 //   S_IDLE  (2'b00) → 'I'  (IDLE)
 //   S_CHECK (2'b01) → 'C'  (CHECK SENSOR)
 //   S_WATER (2'b10) → 'A'  (AIR = menyiram/pengairan)
-//   S_DONE  (2'b11) → 'd'  (DONE)
+//   S_RAIN  (2'b11) → 'R'  (RAIN = sedang hujan)
 //
 // 7-Segment Common Anode (aktif rendah):
 //   Segmen ON  = 0
@@ -545,8 +553,9 @@ module seven_seg_decoder(
             //       'A' mewakili "Air" (air = water dalam bahasa Indonesia)
             2'b10: seg = 7'b0001000;
 
-            // 'd' : segmen b,c,d,e,g ON → 7'b0100001
-            2'b11: seg = 7'b0100001;
+            // 'R' : segmen a,b,e,f,g ON → 7'b0001100
+            //       Uppercase R
+            2'b11: seg = 7'b0001100;
 
             default: seg = 7'b1111111;  // Semua segmen OFF
         endcase

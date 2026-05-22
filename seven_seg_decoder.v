@@ -6,7 +6,7 @@
 //   S_IDLE  (2'b00) → 'I'  (IDLE)
 //   S_CHECK (2'b01) → 'C'  (CHECK SENSOR)
 //   S_WATER (2'b10) → 'A'  (AIR = menyiram/pengairan)
-//   S_RAIN  (2'b11) → 'R'  (RAIN = sedang hujan)
+//   S_RAIN  (2'b11) → 'H'  (Hujan = sedang hujan)
 //
 // 7-Segment Common Anode (aktif rendah):
 //   Segmen ON  = 0
@@ -43,9 +43,9 @@ module seven_seg_decoder(
             //       'A' mewakili "Air" (air = water dalam bahasa Indonesia)
             2'b10: seg = 7'b0001000;
 
-            // 'R' : segmen a,b,e,f,g ON → 7'b0001100
-            //       Uppercase R
-            2'b11: seg = 7'b0001100;
+            // 'H' : segmen b,c,e,f,g ON → 7'b0001001
+            //       Uppercase H (Hujan)
+            2'b11: seg = 7'b0001001;
 
             default: seg = 7'b1111111;  // Semua segmen OFF
         endcase

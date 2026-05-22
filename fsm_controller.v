@@ -10,7 +10,7 @@
 //   S_IDLE  = 2'b00  → Pompa OFF, 7seg = 'I'
 //   S_CHECK = 2'b01  → Pompa OFF, 7seg = 'C'
 //   S_WATER = 2'b10  → Pompa ON,  7seg = 'A'
-//   S_RAIN  = 2'b11  → Pompa OFF, 7seg = 'R' (sedang hujan)
+//   S_RAIN  = 2'b11  → Pompa OFF, 7seg = 'H' (Hujan)
 // ============================================================
 
 module fsm_controller(
@@ -83,6 +83,8 @@ module fsm_controller(
             S_RAIN: begin
                 if (!enable)
                     next_state = S_IDLE;
+                else if (sensor_hujan)
+                    next_state = S_RAIN;
                 else
                     next_state = S_CHECK;
             end
