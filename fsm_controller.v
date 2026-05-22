@@ -64,7 +64,7 @@ module fsm_controller(
                 else if (sensor_kering && !sensor_hujan)
                     next_state = S_WATER;
                 else
-                    next_state = S_DONE;
+                    next_state = S_CHECK;
             end
 
             S_WATER: begin

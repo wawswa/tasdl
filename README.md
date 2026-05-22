@@ -23,16 +23,17 @@
 - **Enable (SW1):** Menjalankan atau menghentikan sistem. Jika Enable=0, dari state apapun FSM akan kembali ke `S_IDLE`.
 - **Sensor_Kering (SW2):** Nilai 1 menandakan tanah kering (perlu disiram), 0 menandakan tanah basah.
 - **Sensor_Hujan (SW3):** Nilai 1 menandakan sedang hujan (pompa tidak boleh menyiram), 0 berarti tidak hujan.
+- **LED RGB16 Biru (Pompa Air):** Saat state S_WATER, LED RGB16 menyala **warna biru**. Saat state lain, LED mati.
 
 **Alur kerja sistem:**
 
 1. Sistem di `S_IDLE` → Jika Enable ON, berpindah ke `S_CHECK`.
-2. Di `S_CHECK` → Membaca sensor:
-   - Jika **kering & tidak hujan** → `S_WATER` (pompa menyala, LED ON, 7-seg tampil "A").
-   - Jika **basah atau hujan** → `S_DONE` (tanah sudah basah / sedang hujan).
+2. Di `S_CHECK` → Membaca sensor secara terus-menerus (stay/loop):
+   - Jika **kering & tidak hujan** → `S_WATER` (pompa menyala, **LED16 biru ON**, 7-seg tampil "A").
+   - Jika **basah atau hujan** → **tetap di `S_CHECK`** (terus monitoring, tidak langsung ke DONE).
    - Jika **Enable OFF** → kembali ke `S_IDLE`.
 3. Di `S_WATER` (pompa aktif):
-   - Tetap menyiram selama tanah kering & tidak hujan.
+   - Tetap menyiram selama tanah kering & tidak hujan (self-loop).
    - Jika **hujan** atau **tanah sudah basah** → `S_DONE`.
    - Jika **Enable OFF** → `S_IDLE`.
 4. Di `S_DONE` → Jika Enable ON, kembali ke `S_CHECK` untuk evaluasi ulang, membentuk siklus monitoring.
@@ -45,47 +46,94 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 
 ### Representasi State
 
-| State | Encoding | Pompa Air | 7-Segment |
-|:---:|:---:|:---:|:---:|
-| S_IDLE | 2'b00 | OFF | I |
-| S_CHECK | 2'b01 | OFF | C |
-| S_WATER | 2'b10 | ON | A |
-| S_DONE | 2'b11 | OFF | d |
+| State | Encoding | Pompa Air | LED RGB | 7-Segment |
+|:---:|:---:|:---:|:---:|:---:|
+| S_IDLE | 2'b00 | OFF | OFF | I |
+| S_CHECK | 2'b01 | OFF | OFF | C |
+| S_WATER | 2'b10 | ON | **Biru** | A |
+| S_DONE | 2'b11 | OFF | OFF | d |
 
 ### Diagram Transisi State (ASCII-Art)
 
 ```
-                      enable=0
-                ┌──────────────────────┐
-                │                      │
-                │                      ▼
-           ┌─────────┐  enable=1  ┌─────────────┐
-           │  IDLE   │───────────►│ CHECK_SENSOR │◄────────────┐
-           │  (S00)  │            │    (S01)      │            │
-           │ Pompa=0 │            │  Pompa=0      │            │
-           │ 7seg=I  │◄──┐        │  7seg=C       │            │
-           └─────────┘   │        └──────┬────────┘            │
-                ▲        │          │kering=1│                  │
-                │        │          │hujan=0 │                  │
-                │        │          │        │                  │
-                │        │          ▼        │                  │
-                │        │     ┌───────────┐ │                  │
-      enable=0  │        │     │ WATERING  │ │                  │
-     (dari      │        │     │  (S10)    │ │                  │
-      semua     │        │     │ Pompa=1   │ │                  │
-      state)    │        │     │ 7seg=A    │─┘                  │
-                │        │     └─────┬─────┘  hujan=1           │
-                │        │        ┌───┴───┐    atau kering=0     │
-                │        │        │       │    atau enable=0     │
-                │        │        │       ▼                      │
-                │        │     ┌───────────┐                    │
-                │        │     │   DONE    │─────────────────────┘
-                │        └─────│  (S11)    │   enable=1
-                │              │  Pompa=0  │
-                │              │  7seg=d   │
-                │              └─────┬─────┘
-                │                    │
-                └────────────────────┘ enable=0
+                    ╔══════════════════════════════════════════════════╗
+                    ║   DIAGRAM TRANSISI STATE — FSM MOORE          ║
+                    ║   Sistem Penyiram Tanaman Otomatis             ║
+                    ║                                                ║
+                    ║   Notasi:  E  = Enable                        ║
+                    ║             SK = Sensor_Kering (1=kering)     ║
+                    ║             SH = Sensor_Hujan  (1=hujan)       ║
+                    ║             X  = Don't Care                    ║
+                    ╚══════════════════════════════════════════════════╝
+
+     ┌──────────────────────────────────────────────────────────────────┐
+     │                    E=0, X, X  (dari semua state)               │
+     │                                                                  │
+     │         ┌──────────────┐                   ┌──────────────┐     │
+     │    ┌───►│    IDLE      │     E=1,X,X      │    CHECK     │◄──┐ │
+     │    │    │   S_IDLE     ├──────────────────►│   S_CHECK    │   │ │
+     │    │    │     00       │                   │     01       │   │ │
+     │    │    │  Pompa = 0   │                   │  Pompa = 0   │   │ │
+     │    │    │  7seg = I    │                   │  7seg = C    │   │ │
+     │    │    │  LED = OFF   │                   │  LED = OFF   │   │ │
+     │    │    └──────────────┘                   └──────┬───────┘   │ │
+     │    │              ▲                               │           │ │
+     │    │              │                        ┌──────┴──────┐    │ │
+     │    │              │                        │             │    │ │
+     │    │              │                 E=1,SK=1,SH=0   E=1         │ │
+     │    │              │                 (kering &       SK=0        │ │
+     │    │              │                  tdk hujan)       atau     │ │
+     │    │              │                        │        SH=1       │ │
+     │    │              │                        │        (tetap     │ │
+     │    │              │                        │         cek       │ │
+     │    │              │                        v         sensor)   │ │
+     │    │              │               ┌──────────────┐   │        │ │
+     │    │              │               │              │   │        │ │
+     │    │              │               │  WATERING    │   │        │ │
+     │    │              │               │  S_WATER     │   │        │ │
+     │    │              │               │    10        │   │        │ │
+     │    │              │               │  Pompa = 1   │   │        │ │
+     │    │              │               │  LED = Biru  │   │        │ │
+     │    │              │               │  7seg = A    │   │        │ │
+     │    │              │               │              │   │        │ │
+     │    │              │               └──────┬───────┘   │        │ │
+     │    │              │                      │           │        │ │
+     │    │              │               ┌──────┴──────┐    │        │ │
+     │    │              │               │             │    │        │ │
+     │    │              │        E=1,SK=1,SH=0    E=0 atau     │ │
+     │    │              │        (tetap siram)   E=1,SK=0      │ │
+     │    │              │               │        atau SH=1      │ │
+     │    │              │               │             │        │ │
+     │    │              │               v             v        │ │
+     │    │              │        ┌──────────────┐ ┌──────────────┐│ │
+     │    │              │        │  WATERING    │ │    DONE      ││ │
+     │    │              │        │   (loop)     │ │  S_DONE      ││ │
+     │    │              │        └──────────────┘ │     11       ││ │
+     │    │              │                         │  Pompa = 0   ││ │
+     │    │              │                         │  7seg = d    ││ │
+     │    │              │                         │  LED = OFF   ││ │
+     │    │              │                         └──────┬───────┘│ │
+     │    │              │                                │        │ │
+     │    │              │                          E=1,X,X│  E=0   │ │
+     │    │              │                          (kembali│  atau  │ │
+     │    │              │                           cek)   │  reset │ │
+     │    │              └──────────────────────────────────────┘ │ │
+     │    └───────────────────────────────────────────────────────┘ │
+     │                                                                  │
+     └──────────────────────────────────────────────────────────────────┘
+
+     Ringkasan Transisi:
+     ─────────────────────
+     IDLE   ──(E=1)──────────► CHECK
+     IDLE   ──(E=0)──────────► IDLE (self-loop)
+     CHECK  ──(E=0)──────────► IDLE
+     CHECK  ──(E=1,SK=1,SH=0)► WATERING
+     CHECK  ──(E=1,SK=0 atau SH=1)► CHECK (self-loop, tetap monitoring)
+     WATER  ──(E=0)──────────► IDLE
+     WATER  ──(E=1,SK=1,SH=0)► WATERING (self-loop, tetap siram)
+     WATER  ──(E=1,SK=0 atau SH=1)► DONE
+     DONE   ──(E=0)──────────► IDLE
+     DONE   ──(E=1)──────────► CHECK
 ```
 
 ### Tabel Transisi Ringkas
@@ -96,8 +144,8 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 | S_IDLE | 1 | X | X | S_CHECK |
 | S_CHECK | 0 | X | X | S_IDLE |
 | S_CHECK | 1 | 1 | 0 | S_WATER |
-| S_CHECK | 1 | 0 | X | S_DONE |
-| S_CHECK | 1 | 1 | 1 | S_DONE |
+| S_CHECK | 1 | 0 | X | S_CHECK |
+| S_CHECK | 1 | 1 | 1 | S_CHECK |
 | S_WATER | 0 | X | X | S_IDLE |
 | S_WATER | 1 | 1 | 0 | S_WATER |
 | S_WATER | 1 | X | 1 | S_DONE |
@@ -117,33 +165,33 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 
 ### Tabel Output (Moore — hanya bergantung pada current state)
 
-| Current State | Pompa_Air | 7-Segment |
-|:---:|:---:|:---:|
-| S_IDLE (00) | 0 | I |
-| S_CHECK (01) | 0 | C |
-| S_WATER (10) | 1 | A |
-| S_DONE (11) | 0 | d |
+| Current State | Pompa_Air | LED RGB | 7-Segment |
+|:---:|:---:|:---:|:---:|
+| S_IDLE (00) | 0 | OFF | I |
+| S_CHECK (01) | 0 | OFF | C |
+| S_WATER (10) | 1 | **Biru** | A |
+| S_DONE (11) | 0 | OFF | d |
 
 ### Tabel Transisi State Lengkap
 
-| CS[1:0] | E | SK | SH | NS[1:0] | Pompa | 7seg |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| 00 | 0 | X | X | 00 | 0 | I |
-| 00 | 1 | X | X | 01 | 0 | I |
-| 01 | 0 | X | X | 00 | 0 | C |
-| 01 | 1 | 0 | 0 | 11 | 0 | C |
-| 01 | 1 | 0 | 1 | 11 | 0 | C |
-| 01 | 1 | 1 | 0 | 10 | 0 | C |
-| 01 | 1 | 1 | 1 | 11 | 0 | C |
-| 10 | 0 | X | X | 00 | 1 | A |
-| 10 | 1 | 1 | 0 | 10 | 1 | A |
-| 10 | 1 | 1 | 1 | 11 | 1 | A |
-| 10 | 1 | 0 | 0 | 11 | 1 | A |
-| 10 | 1 | 0 | 1 | 11 | 1 | A |
-| 11 | 0 | X | X | 00 | 0 | d |
-| 11 | 1 | X | X | 01 | 0 | d |
+| CS[1:0] | E | SK | SH | NS[1:0] | Pompa | LED RGB | 7seg |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| 00 | 0 | X | X | 00 | 0 | OFF | I |
+| 00 | 1 | X | X | 01 | 0 | OFF | I |
+| 01 | 0 | X | X | 00 | 0 | OFF | C |
+| 01 | 1 | 0 | 0 | 01 | 0 | OFF | C |
+| 01 | 1 | 0 | 1 | 01 | 0 | OFF | C |
+| 01 | 1 | 1 | 0 | 10 | 0 | OFF | C |
+| 01 | 1 | 1 | 1 | 01 | 0 | OFF | C |
+| 10 | 0 | X | X | 00 | 1 | Biru | A |
+| 10 | 1 | 1 | 0 | 10 | 1 | Biru | A |
+| 10 | 1 | 1 | 1 | 11 | 1 | Biru | A |
+| 10 | 1 | 0 | 0 | 11 | 1 | Biru | A |
+| 10 | 1 | 0 | 1 | 11 | 1 | Biru | A |
+| 11 | 0 | X | X | 00 | 0 | OFF | d |
+| 11 | 1 | X | X | 01 | 0 | OFF | d |
 
-> **Catatan:** Pada state S_CHECK(01), kondisi SK=0 menghasilkan S_DONE **terlepas dari SH** (tanah sudah basah, tidak perlu menyiram). Pada state S_WATER(10), kondisi SK=0 atau SH=1 menghasilkan S_DONE (berhenti menyiram karena tanah basah atau sedang hujan).
+> **Catatan:** Pada state S_CHECK(01), kondisi selain E=1 & SK=1 & SH=0 menghasilkan **S_CHECK (stay)** — sistem tetap monitoring sensor tanpa berpindah ke state lain. Hanya saat SK=1 (kering) dan SH=0 (tidak hujan) FSM berpindah ke S_WATER. Pada state S_WATER(10), kondisi SK=0 atau SH=1 menghasilkan S_DONE (berhenti menyiram karena tanah basah atau sedang hujan).
 
 ---
 
@@ -193,7 +241,9 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 │  │  │  Output Logic (Data Flow - Modul 1)  │                │            │  │
 │  │  │                                      │                │            │  │
 │  │  │  pompa_air = (current_state == S_WATER)│               │            │  │
-│  │  │  state_out = current_state            │◄───────────────┘            │  │
+│  │  │  pompa_air_b = pompa_air (biru)        │◄───────────────┘            │  │
+│  │  │  pompa_air_r = 0 (selalu OFF)          │                            │  │
+│  │  │  pompa_air_g = 0 (selalu OFF)          │                            │
 │  │  └─────────────────────────────────────┘                             │  │
 │  └──────────────────────────────────────────────────────────────────────┘  │
 │                                      │ state_out[1:0]                       │
@@ -221,7 +271,9 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 │  SW1 (L16) ────► enable                                                    │
 │  SW2 (M13) ────► sensor_kering                                             │
 │  SW3 (R15) ────► sensor_hujan                                              │
-│  LED0 (H17) ◄── pompa_air                                                  │
+│  LED16_R (N16) ◄── pompa_air_r (OFF)                                       │
+│  LED16_G (M16) ◄── pompa_air_g (OFF)                                       │
+│  LED16_B (R12) ◄── pompa_air_b (Biru saat S_WATER)                         │
 │  7-Seg Cathodes (T10,R10,K16,K13,P15,T11,L18) ◄── seg[6:0]               │
 │  7-Seg DP (H15) ◄── dp = 1 (OFF)                                          │
 │  7-Seg Anodes (J17,J18,T9,J14,P14,T14,K2,U13) ◄── an[7:0]               │
@@ -235,7 +287,7 @@ Semua perpindahan state berjalan pada clock **1 Hz** (hasil penurunan dari 100 M
 3. **4 buah input switch** (`reset`, `enable`, `sensor_kering`, `sensor_hujan`) masuk ke **Next State Logic** (kombinasional).
 4. **Next State Logic** menghitung `next_state` berdasarkan `current_state` + semua input.
 5. **D-FF Register** menyimpan `current_state`, di-update pada **posedge slow_clk**, dan di-reset asinkron pada **posedge reset**.
-6. **Output Logic** (Data Flow) menghasilkan `pompa_air` dan `state_out` dari `current_state` saja (khas Moore).
+6. **Output Logic** (Data Flow) menghasilkan `pompa_air` (LED16 biru) dan `state_out` dari `current_state` saja (khas Moore). Channel R dan G selalu OFF, hanya channel B yang menyala saat S_WATER.
 7. **7-Segment Decoder** menerima `state_out[1:0]` dan mengkonversi ke pola segmen huruf yang sesuai.
 
 ---
@@ -260,7 +312,7 @@ tasdl/
 | Modul | Konsep | Lokasi dalam Kode |
 |-------|--------|-------------------|
 | **Modul 1** | Behavioral | `fsm_controller.v` → blok `always @(*)` untuk next state logic |
-| **Modul 1** | Data Flow | `fsm_controller.v` → `assign pompa_air`; `seven_seg_decoder.v` → `assign an` |
+| **Modul 1** | Data Flow | `fsm_controller.v` → `assign pompa_air`; `top_module.v` → `assign pompa_air_r/g/b`; `seven_seg_decoder.v` → `assign an` |
 | **Modul 1** | Structural | `top_module.v` → instansiasi `u_clock_divider`, `u_fsm`, `u_seven_seg` |
 | **Modul 2** | Coding Reuse | `top_module.v` → top module memanggil 3 sub-module |
 | **Modul 3** | Clocking Function | `clock_divider.v` → counter 50M untuk menurunkan 100MHz → 1Hz |
@@ -276,7 +328,9 @@ tasdl/
 | `enable` | L16 | SW1 |
 | `sensor_kering` | M13 | SW2 |
 | `sensor_hujan` | R15 | SW3 |
-| `pompa_air` | H17 | LED0 |
+| `pompa_air_r` | N16 | LED16_R (OFF) |
+| `pompa_air_g` | M16 | LED16_G (OFF) |
+| `pompa_air_b` | R12 | LED16_B (Biru saat S_WATER) |
 | `seg[0]` (a) | T10 | 7-Seg CA |
 | `seg[1]` (b) | R10 | 7-Seg CB |
 | `seg[2]` (c) | K16 | 7-Seg CC |
@@ -404,7 +458,7 @@ module fsm_controller(
                 else if (sensor_kering && !sensor_hujan)
                     next_state = S_WATER;
                 else
-                    next_state = S_DONE;
+                    next_state = S_CHECK;
             end
 
             S_WATER: begin
@@ -522,8 +576,10 @@ module top_module(
     input  wire sensor_kering,    // SW2: Sensor kelembapan (1=kering, 0=basah)
     input  wire sensor_hujan,     // SW3: Sensor hujan (1=hujan, 0=tidak)
 
-    // --- Output LED ---
-    output wire pompa_air,        // LED0: Indikator pompa air (1=menyala)
+    // --- Output RGB LED (Pompa Air = Biru) ---
+    output wire pompa_air_r,      // LED16_R: Selalu OFF
+    output wire pompa_air_g,      // LED16_G: Selalu OFF
+    output wire pompa_air_b,      // LED16_B: Biru saat pompa ON
 
     // --- Output 7-Segment ---
     output wire [6:0] seg,        // Segmen {g,f,e,d,c,b,a}, aktif rendah
@@ -536,6 +592,7 @@ module top_module(
     // ========================================================
     wire slow_clk;                // Clock 1 Hz dari clock_divider
     wire [1:0] state_bus;         // Bus state dari FSM ke 7-seg decoder
+    wire pompa_air_wire;          // Sinyal pompa_air dari FSM
 
     // ========================================================
     // Modul 3: Instansiasi Clock Divider
@@ -557,7 +614,7 @@ module top_module(
         .enable          (enable),
         .sensor_kering  (sensor_kering),
         .sensor_hujan   (sensor_hujan),
-        .pompa_air      (pompa_air),
+        .pompa_air      (pompa_air_wire),
         .state_out      (state_bus)
     );
 
@@ -575,6 +632,15 @@ module top_module(
     // Data Flow: Decimal point selalu OFF (aktif rendah = 1)
     // ========================================================
     assign dp = 1'b1;
+
+    // ========================================================
+    // Data Flow: RGB LED untuk indikator Pompa Air (Biru)
+    // Saat pompa_air=1 → LED16_B ON (biru), R & G OFF
+    // Saat pompa_air=0 → Semua OFF
+    // ========================================================
+    assign pompa_air_r = 1'b0;
+    assign pompa_air_g = 1'b0;
+    assign pompa_air_b = pompa_air_wire;
 
 endmodule
 ```
@@ -599,8 +665,10 @@ set_property -dict { PACKAGE_PIN L16   IOSTANDARD LVCMOS33 } [get_ports enable];
 set_property -dict { PACKAGE_PIN M13   IOSTANDARD LVCMOS33 } [get_ports sensor_kering];   # SW2: Sensor Kelembapan
 set_property -dict { PACKAGE_PIN R15   IOSTANDARD LVCMOS33 } [get_ports sensor_hujan];    # SW3: Sensor Hujan
 
-## --- LED (Output) ---
-set_property -dict { PACKAGE_PIN H17   IOSTANDARD LVCMOS33 } [get_ports pompa_air];  # LED0: Pompa Air
+## --- RGB LED (Output) - Pompa Air Biru ---
+set_property -dict { PACKAGE_PIN N16   IOSTANDARD LVCMOS33 } [get_ports pompa_air_r];  # LED16_R (OFF)
+set_property -dict { PACKAGE_PIN M16   IOSTANDARD LVCMOS33 } [get_ports pompa_air_g];  # LED16_G (OFF)
+set_property -dict { PACKAGE_PIN R12   IOSTANDARD LVCMOS33 } [get_ports pompa_air_b];  # LED16_B (Biru saat ON)
 
 ## --- 7-Segment Display Cathodes (seg) ---
 ## seg[0]=a, seg[1]=b, seg[2]=c, seg[3]=d, seg[4]=e, seg[5]=f, seg[6]=g
@@ -627,6 +695,6 @@ set_property -dict { PACKAGE_PIN U13   IOSTANDARD LVCMOS33 } [get_ports {an[7]}]
 
 ## --- Konfigurasi Bitstream ---
 set_property CONFIG_VOLTAGE 3.3 [current_design]
-set_property CFGBVS VCCIO [current_design]
+set_property CFGBVS VCCO [current_design]
 set_property BITSTREAM.CONFIG.UNUSEDPIN PULLDOWN [current_design]
 ```
