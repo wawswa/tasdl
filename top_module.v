@@ -21,21 +21,15 @@ module top_module(
 );
 
     wire slow_clk;
-    wire [1:0] state_bus;
+    wire [2:0] state_bus;
     wire pompa_air_wire;
 
-    // ========================================================
-    // Modul 3: Instansiasi Clock Divider
-    // ========================================================
     clock_divider u_clock_divider(
         .clk      (clk),
         .reset    (reset),
         .slow_clk (slow_clk)
     );
 
-    // ========================================================
-    // Modul 4 & 5: Instansiasi FSM Controller
-    // ========================================================
     fsm_controller u_fsm(
         .slow_clk      (slow_clk),
         .reset          (reset),
@@ -46,25 +40,23 @@ module top_module(
         .state_out      (state_bus)
     );
 
-    // ========================================================
-    // Modul 1 & 2: Instansiasi 7-Segment Decoder
-    // ========================================================
     seven_seg_decoder u_seven_seg(
         .state (state_bus),
         .seg   (seg),
         .an    (an)
     );
 
-    // ========================================================
-    // Data Flow: Decimal point selalu OFF
-    // ========================================================
     assign dp = 1'b1;
 
     // ========================================================
-    // Data Flow: RGB LED (Biru saat pompa ON)
+    // Data Flow: RGB LED indicator per state
+    // S_DRY   (010) -> Kuning (R=1, G=1, B=0)
+    // S_WATER (011) -> Biru   (R=0, G=0, B=1)
+    // S_RAIN  (100) -> Hijau  (R=0, G=1, B=0)
+    // Lainnya        -> OFF    (R=0, G=0, B=0)
     // ========================================================
-    assign pompa_air_r = 1'b0;
-    assign pompa_air_g = 1'b0;
-    assign pompa_air_b = pompa_air_wire;
+    assign pompa_air_r = (state_bus == 3'b010) ? 1'b1 : 1'b0;
+    assign pompa_air_g = (state_bus == 3'b010 || state_bus == 3'b100) ? 1'b1 : 1'b0;
+    assign pompa_air_b = (state_bus == 3'b011) ? 1'b1 : 1'b0;
 
 endmodule
